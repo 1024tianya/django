@@ -1,0 +1,64 @@
+{% extends "customers/base.html" %}
+
+{% block content %}
+    {% if title %}
+        <h1>{{ title }}</h1>
+    {% endif %}
+
+    {% if message %}
+        <h2>{{ message }}</h2>
+    {% else %}
+        {% if form %}
+            <form action="" method="POST">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div>
+                        {{ field.label_tag }}{{ field }}
+                        {{ field.errors }}
+                    </div>
+                {% endfor %}
+                <input type="submit" value="保存"/>
+            </form>
+        {% endif %}
+    {% endif %}
+
+    {% if error_message %}
+        {% if redirect %}
+            <p>
+                <span>{{ error_message }}</span>
+                <span style="color: #aa1111">5秒后跳转(</span>
+                <span id="totalSecond" style="color: #aa1111">5</span>
+                <span style="color: #aa1111">)</span>
+            </p>
+        {% else %}
+            <h1>{{ error_message }}</h1>
+        {% endif %}
+    {% endif %}
+
+    <script language="javascript" type="text/javascript">
+        var second = document.getElementById('totalSecond').textContent;
+
+        if (second !== null || second !== undefined || second !== '') {
+            if (navigator.appName.indexOf("Explorer") > -1) {
+                second = document.getElementById('totalSecond').innerText;
+            } else {
+                second = document.getElementById('totalSecond').textContent;
+            }
+
+            setInterval("redirect('{{ redirect }}')", 1000);
+        }
+
+        function redirect(redirect_url) {
+            if (second < 0) {
+                location.href = redirect_url;
+            } else {
+                if (navigator.appName.indexOf("Explorer") > -1) {
+                    document.getElementById('totalSecond').innerText = second--;
+                } else {
+                    document.getElementById('totalSecond').textContent = second--;
+                }
+            }
+        }
+    </script>
+
+{% endblock content %}

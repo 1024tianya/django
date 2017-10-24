@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <script type="text/javascript">window.__admin_media_prefix__ = "/static/admin/";</script>
+    <link rel="stylesheet" type="text/css" href="/static/admin/css/base.css"/>
+    <link rel="stylesheet" type="text/css" href="/static/admin/css/dashboard.css"/>
+
+    <meta name="robots" content="NONE,NOARCHIVE"/>
+</head>
+
+<script>
+    function delConfirm(delUrl) {
+        if (confirm('确实要删除吗?'))
+            location = delUrl;
+    }
+</script>
+
+<body>
+<div style="width: 100%;">
+    <!-- trans info -->
+    <div style="padding: 5px; background-color: #ffded3">
+        <span style="font-size: medium">交易信息 </span>
+        <span> - </span><u><a href="{% url 'add_trans' customer_id %}"  target="_parent">添加交易信息</a></u> <b> </b>
+    </div>
+    <div>
+        {% if trans_info_list %}
+        <table>
+            <tbody>
+            {% for trans_details_info in trans_info_list %}
+                <tr>
+                    <td>
+                        {% if trans_details_info.trans.trans_order_number_text|cut:' '|length  != 0 %}
+                            <span>交易单号:</span>
+                            <span style="font-size: small; color: GrayText">{{ trans_details_info.trans.trans_order_number_text }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if trans_details_info.trans.trans_name_text|cut:' '|length  != 0 %}
+                            <span> 名称:</span>
+                            <span style="font-size: small; color: GrayText">{{ trans_details_info.trans.trans_name_text }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if trans_details_info.contact_name|cut:' '|length  != 0 %}
+                            <span> 经办人:</span>
+                            <span style="font-size: small; color: GrayText">{{ trans_details_info.contact_name }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if trans_details_info.trans.trans_fax_int|cut:' '|length  != 0 %}
+                            <span> 税点:</span>
+                            <span style="font-size: small; color: GrayText">{{ trans_details_info.trans.trans_fax_int }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if trans_details_info.trans.trans_date %}
+                            <span>成交日期:</span>
+                            <span style="font-size: small; color: GrayText">{{ trans_details_info.trans.trans_date }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if trans_details_info.trans.trans_date %}
+                            <span>交货日期:</span>
+                            <span style="font-size: small; color: GrayText">{{ trans_details_info.trans.trans_date }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <b> - </b><u><a href="{% url 'edit_trans' trans_details_info.trans.id %}">修改</a></u>
+                        <b> - </b><u><a href="{% url 'add_transgoods' trans_details_info.trans.id %}">添加货物信息</a></u>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p style="padding-left: 10px">没有交易信息。</p>
+        {% endif %}
+    </div>
+    {% if error_message %}
+        error_message:{{ error_message }}
+    {% endif %}
+</div>
+</body>
+</html>

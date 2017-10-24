@@ -1,0 +1,49 @@
+{% extends "customers/base.html" %}
+
+{% block content_header %}
+    <h1 style="font-size: x-large">货物列表</h1>
+{% endblock content_header %}
+
+{% block content %}
+
+<!-- Content -->
+    <div style="">
+        <ul class="object-tools">
+            <h1>
+        <span style="padding-right: 10px;padding-top: 5px"><a href="/trans/goods/add" class="addlink">添加货物信息</a></span>
+        </h1>
+        </ul>
+
+        {% if goods_info_list %}
+        <div>
+            <table  cellpadding="3">
+                <tr>
+                    <th width="25%" style="font-size: larger">名称</th>
+                    <th style="font-size: larger">单价</th>
+                    <th style="font-size: larger">进货价</th>
+                    <th style="font-size: larger">供应商</th>
+                    <th style="font-size: larger">备注</th>
+                    <th style="font-size: larger">添加日期</th>
+                    <th style="font-size: larger">操作</th>
+                </tr>
+                {% for goods_info in goods_info_list %}
+                    <tr class="table_row" style="font-size: medium">
+                        <td>{{ goods_info.goods_name_text }}</td>
+                        <td>{{ goods_info.goods_price_float }}</td>
+                        <td>{{ goods_info.goods_cost_float }}</td>
+                        <td>{{ goods_info.goods_provider.company_name_text }}</td>
+                        <td>{{ goods_info.comment_text }}</td>
+                        <td>{{ goods_info.add_date }}</td>
+                        <td><a href="/trans/goods/edit/{{ goods_info.id }}/">修改 | </a>
+                            <a href="javascript:if(confirm('确实要删除吗?'))location='/trans/goods/del/{{ goods_info.id }}/'">删除</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </table>
+            {% else %}
+                <p>没有货物信息。</p>
+            {% endif %}
+        </div>
+    </div>
+    <!-- END Content -->
+{% endblock content %}

@@ -1,0 +1,85 @@
+{% extends "customers/base.html" %}
+
+{% block content_header %}
+    <h1 style="font-size: x-large">服装列表</h1>
+
+{% endblock content_header %}
+
+{% block content %}
+
+<!-- Content -->
+    <div style="">
+        <ul class="object-tools">
+            <h1>
+        <span style="padding-right: 10px;padding-top: 5px"><a href="/customers/addcustomer" class="addlink">添加服装信息</a></span>
+        </h1>
+        </ul>
+
+        {% if goods_info_list %}
+        <div>
+            <table  cellpadding="3">
+                <tr>
+                    <th width="25%" style="font-size: larger">公司名称</th>
+                    <th style="font-size: larger">联系人</th>
+                    {#<th style="font-size: larger">公司地址</th>#}
+                    <th style="font-size: larger">交易次数</th>
+                    <th style="font-size: larger">最后一次交易</th>
+                    <th style="font-size: larger">添加日期</th>
+                    <th style="font-size: larger">操作</th>
+                </tr>
+                {% for customer_info in customer_info_list %}
+                    <tr class="table_row" style="font-size: medium">
+                        <td width="25%"  style="word-break : break-all; overflow:hidden; ">
+                            <div>
+                                <a href="/customers/{{ customer_info.customer.id }}/" style="font-size: larger">{{ customer_info.customer.customer_company_name_text }}</a>
+                                <p class="1comment_txt1" style="padding-top:2px; padding-left:5px; font-size: small">
+                                    {% if customer_info.customer.customer_comment_text|cut:' '|length  > 50 %}
+                                        <span style="font-size: small; color: GrayText">{{customer_info.customer.customer_comment_text | slice:"50"}}</span>
+                                        <span style="font-size: small; color: GrayText">...</span>
+                                    {% else %}
+                                        <span style="font-size: small; color: GrayText">{{ customer_info.customer.customer_comment_text}}</span>
+                                    {% endif %}
+
+                                </p>
+                            </div>
+                        </td>
+                        <td class="contacts">
+                            {% for contact in customer_info.contacts %}
+                            {{ contact }} <br>
+                            {% endfor %}
+                        </td>
+                        {#<td>{{ customer_info.customer.customer_company_address_text }}</td>#}
+                        <td>{{ customer_info.trans_count }}</td>
+                        <td>{{ customer_info.last_trans.trans_name_text }} - {{ customer_info.last_trans.trans_date }}</td>
+                        <td>{{ customer_info.customer.customer_add_date }}</td>
+                        <td><a href="/customers/editcustomer/{{ customer_info.customer.id }}/">修改 | </a>
+                            <a href="javascript:if(confirm('确实要删除吗?'))location='/customers/delcustomer/{{ customer_info.customer.id }}/'">删除</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </table>
+            {% else %}
+                <p>没有添加客户。</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        window.onload = function () {
+            debugger;
+            var es = document.getElementsByClassName("comment_txt");
+
+            var maxLen = 50;
+            for (var i = 0 ; i < es.length; i ++) {
+                //这里可以循环出每个元素对象
+                var str = es[i].innerHTML;
+                var len = str.length;
+                if (len > maxLen) {
+                    es[i].innerHTML = str.substring(0, maxLen) + "...";
+                }
+            }
+        }
+    </script>
+
+    <!-- END Content -->
+{% endblock content %}

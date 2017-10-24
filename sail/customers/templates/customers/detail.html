@@ -1,0 +1,130 @@
+{% extends "customers/base.html" %}
+
+{% block content %}
+    <script>
+        function delConfirm(delUrl)
+        {
+            if(confirm('确实要删除吗?'))
+                location=delUrl;
+        }
+
+        // document.domain = "caibaojian.com";
+        function iframeHeightAutoFit(iframe) {
+            if (iframe) {
+                var iframeWin = iframe.contentWindow || iframe.contentDocument.parentWindow;
+                if (iframeWin.document.body) {
+                    iframe.height = iframeWin.document.documentElement.scrollHeight || iframeWin.document.body.scrollHeight;
+                    iframe.width = iframeWin.document.documentElement.scrollWidth|| iframeWin.document.body.scrollWidth;
+                }
+            }
+        };
+    </script>
+    <div style="width: 100%">
+        {% if customer_info %}
+            <!-- company name -->
+            <div style="padding:5px; padding-bottom:8px; background-color: #e8f2ff">
+                <h1 style="display: inline; color: #04539c">
+                    <strong>{{ customer_info.customer_company_name_text }}</strong></h1>
+                <span style="font-size: small; color: GrayText"> - {{ customer_info.customer_add_date }} 添加</span>
+                <span>  -  </span><a href="{% url 'edit_customer' customer_info.id %}"
+                                     style="padding-right: 5px; ">编辑</a>
+            </div>
+
+            <!-- company info -->
+            <div style="padding-left: 10px;  padding-bottom: 3px; color: GrayText">
+                {% if customer_info.customer_company_address_text|cut:' '|length  != 0 %}
+                    <span>地址:</span>
+                    <span style="padding-right:10px; font-size: small; color: GrayText">{{ customer_info.customer_company_address_text }}</span>
+                {% endif %}
+                {% if customer_info.customer_company_invoice_text|cut:' '|length  != 0 %}
+                    <span>发票抬头:</span>
+                    <span style="font-size: small; color: GrayText">{{ customer_info.customer_company_invoice_text }}</span>
+                {% endif %}
+                {% if customer_info.customer_comment_text|cut:' '|length  != 0 %}
+                    <br>
+                    <span>备注:</span>
+                    <p style="display: inline; font-size: small; color: GrayText">{{ customer_info.customer_comment_text }}</p>
+                {% endif %}
+            </div>
+
+            <!-- contact info -->
+            <div style="width: 100%;">
+                <div style="padding: 5px; background-color: #ffded3">
+                    <span style="display: inline; font-size: medium">联系人信息</span>
+                    <span> - </span>
+                    <a href="{% url 'add_contact' customer_info.id %}"
+                       style="font-size: small;">添加联系人</a>
+                </div>
+
+                {% if contact_info %}
+                    <table style="width:100%; padding-left: 5px; color: GrayText">
+                        {% for contact in contact_info %}
+                            <tr>
+                                <td>
+                                    <div>
+                                        <span>姓名:</span><span>{{ contact.name_text }}</span>
+                                        {% if contact.address_text|cut:' '|length  != 0 %}
+                                            <span>地址:</span>
+                                            <span style="font-size: small; color: GrayText">{{ contact.address_text }}</span>
+                                        {% endif %}
+                                        {% if contact.mobile1_text|cut:' '|length  != 0 %}
+                                            <span>联系电话:</span>
+                                            <span style="font-size: small; color: GrayText">{{ contact.mobile1_text }}</span>
+                                        {% endif %}
+                                        {% if contact.mobile2_text|cut:' '|length  != 0 %}
+                                            <span>联系电话2:</span>
+                                            <span style="font-size: small; color: GrayText">{{ contact.mobile2_text }}</span>
+                                        {% endif %}
+                                        {% if contact.phone1_text|cut:' '|length  != 0 %}
+                                            <span>公司电话:</span>
+                                            <span style="font-size: small; color: GrayText">{{ contact.phone1_text }}</span>
+                                        {% endif %}
+                                        {% if contact.phone2_text|cut:' '|length  != 0 %}
+                                            <span>公司电话2:</span>
+                                            <span style="font-size: small; color: GrayText">{{ contact.phone2_text }}</span>
+                                        {% endif %}
+                                        {% if contact.email|cut:' '|length  != 0 %}
+                                            <span>Email:</span>
+                                            <span style="font-size: small; color: GrayText">{{ contact.email }}</span>
+                                        {% endif %}
+
+                                        {% if contact.comment_text|cut:' '|length  != 0 %}
+                                            <br>
+                                            <span>备注:</span>
+                                            <span style="font-size: small; color: GrayText">{{ contact.comment_text }}</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td style="text-align:center;">
+                                    <div>
+                                        <a href="{% url 'edit_contact' contact.id %}"
+                                           style="text-align:center; font-size: small;"> 编辑 </a>
+                                        <a href="javascript:if(confirm('确实要删除吗?'))location='/trans/customers/contact/del/{{ contact.id  }}/'"
+                                           style="text-align:center; font-size: small;">  删除 </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                {% else %}
+                    <p  style="padding-left: 10px; color: GrayText">没有添加联系人。</p>
+                {% endif %}
+            </div>
+        {% endif %}
+        <!-- END contact info -->
+
+        <!-- trans info -->
+        <div>
+            <iframe src="{% url 'trans_list_of_customer' customer_info.id %}"
+                    frameborder="0"
+                    width="100%"
+                    scrolling="no"
+                    onload="iframeHeightAutoFit(this)">
+            </iframe>
+        </div>
+        {% if error_message %}
+            error_message:{{ error_message }}
+        {% endif %}
+    </div>
+{% endblock content %}
+

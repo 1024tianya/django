@@ -1,0 +1,41 @@
+{% extends "customers/base.html" %}
+
+{% block content_header %}
+    <h1 style="font-size: x-large">成本列表</h1>
+{% endblock content_header %}
+
+{% block content %}
+<!-- Content -->
+    <div style="">
+        <ul class="object-tools">
+            <h1>
+        <span style="padding-right: 10px;padding-top: 5px"><a href="/trans/costs/add" class="addlink">添加费用信息</a></span>
+        </h1>
+        </ul>
+
+        {% if costs_info_list %}
+        <div>
+            <table cellpadding="3">
+                <tr>
+                    <th width="25%" style="font-size: larger">费用名称</th>
+                    <th style="font-size: larger">费用价格(元)</th>
+                </tr>
+                {% for cost_info in costs_info_list %}
+                    <tr class="table_row" style="font-size: medium">
+                        <td width="25%"  style="word-break : break-all; overflow:hidden; ">
+                            <a href="/trans/costs/edit/{{ cost_info.id }}/" style="font-size: larger">{{ cost_info.cost_name_text }}</a>
+                        </td>
+                        <td>{{ cost_info.cost_price_float }}</td>
+                        <td><a href="/trans/costs/edit/{{ cost_info.id }}/">修改 | </a>
+                            <a href="javascript:if(confirm('确实要删除吗?'))location='/trans/costs/del/{{ cost_info.id }}/'">删除</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+        {% else %}
+            <p>没有费用信息。</p>
+        {% endif %}
+    </div>
+    <!-- END Content -->
+{% endblock content %}

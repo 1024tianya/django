@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+
+<html lang="zh-hans" >
+<head>
+<title>{% block title %}客户管理系统{% endblock title %}</title>
+<link rel="stylesheet" type="text/css" href="/static/admin/css/base.css" />
+<link rel="stylesheet" type="text/css" href="/static/admin/css/dashboard.css" />
+
+
+<meta name="robots" content="NONE,NOARCHIVE" />
+    {% block css %}
+
+    {% endblock css %}
+
+    {% block js %}
+
+    {% endblock js %}
+</head>
+
+
+<body class=" dashboard app-customers"
+  data-admin-utc-offset="28800">
+            {% block content %}
+<head>
+<!-- Container -->
+<div id="container">
+    <!-- Header -->
+    <div id="header">
+        <div id="branding">
+            <h1 id="site-name"><a href="/admin/">客户管理系统</a></h1>
+        </div>
+        <div id="user-tools">
+                欢迎！
+        </div>
+    </div>
+    <!-- END Header -->
+
+<div class="breadcrumbs">
+        <div id="branding">
+            <h4 id="site-name">客户列表</h4>
+        </div>
+        <div id="user-tools">
+                欢迎！
+            <a href="/customers/add/" class="addlink">添加</a>
+        </div>
+</div>
+</head>
+    <!-- Content --
+    <div id="content" class="colMS">
+        <div id="content-main">
+                <div class="app-customers module">
+                </div>
+        </div>
+
+
+        <br class="clear" />
+    </div>
+    <!-- END Content -->
+
+    <div id="footer"></div>
+</div>
+<!-- END Container -->
+            {% endblock content %}
+</body>
+</html>
