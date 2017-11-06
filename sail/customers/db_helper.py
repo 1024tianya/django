@@ -1,5 +1,5 @@
-from .models import Customer, ContactInfo, CustomerTransInfo, CustomerTransGoodsInfo, PictureInfo
-from .models import GoodsInfo, TransInfo, TransGoodsInfo, TransGoodsCostInfo, TransCostInfo, CostInfo, ProviderInfo
+from .models import Customer, ContactInfo, PictureInfo, GoodsInfo, ProviderInfo, CostInfo
+from .models import TransInfo, TransGoodsInfo, TransGoodsCostInfo, TransCostInfo
 
 
 def get_goods_info_list():
@@ -60,7 +60,7 @@ def get_cost_info(cost_id):
 
 def get_trans_info_list(customer_id):
     try:
-        trans_list = TransInfo.objects.filter(customer_key=customer_id).order_by('-trans_date')
+        trans_list = TransInfo.objects.filter(customer_key=customer_id, enabled_key=1).order_by('-trans_date')
     except (KeyError, TransInfo.DoesNotExist):
         trans_list = []
 
@@ -72,15 +72,15 @@ def customer_info_list_compare(c1, c2):
 
 
 # get GoodsInfo with goods_info_id
-def get_goodsinfo_in_list_or_db(goods_info_list, goods_info_id):
-    if len(goods_info_list) > 0:
-        for goods_info in goods_info_list:
+def get_goodsinfo_in_list_or_db(goods_info_id, goods_info_cache):
+    if len(goods_info_cache) > 0:
+        for goods_info in goods_info_cache:
             if goods_info.id == goods_info_id:
                 return goods_info
 
     try:
-        goods_info = GoodsInfo.objects.filter(id=goods_info_id)
-        goods_info_list.append(goods_info)
+        goods_info = GoodsInfo.objects.filter(id=goods_info_id)[0]
+        goods_info_cache.append(goods_info)
     except (KeyError, GoodsInfo.DoesNotExist):
         goods_info = None
 
@@ -108,7 +108,7 @@ def get_picture_info_list(goods_id, picture_info_cache):
 # TODO: limit returned trans info count
 def get_trans_details_list_for_customer(customer_id):
     try:
-        trans_list = TransInfo.objects.filter(customer_key=customer_id).order_by('-trans_date')
+        trans_list = TransInfo.objects.filter(customer_key=customer_id, enabled_key=1).order_by('-trans_date')
     except (KeyError, TransInfo.DoesNotExist):
         trans_list = []
 
@@ -119,25 +119,67 @@ def get_trans_details_list_for_customer(customer_id):
 
     # caches
     picture_info_cache = []
-    cost_info_cache = []
 
     for trans in trans_list:
-        trans_details_info = get_trans_details_info(trans, picture_info_cache, cost_info_cache)
+        trans_details_info = get_trans_details_info(trans, picture_info_cache)
         trans_info_list.append(trans_details_info)
 
     return trans_info_list
 
 
-def get_trans_details_info(trans, picture_info_cache, cost_info_cache):
+def find_disabled_trans_record(customer_key, contacts):
+    try:
+        disabled_trans_list = TransInfo.objects.filter(customer_key=customer_key, enabled_key=0)
+    except (KeyError, TransInfo.DoesNotExist):
+        disabled_trans_list = []
+
+    print(disabled_trans_list)
+
+    if len(disabled_trans_list) is 0:
+        trans = TransInfo()
+        trans.customer_key = customer_key
+        trans.contact_key = contacts[0]
+        trans.save()
+    else:
+        trans = disabled_trans_list[0]
+
+    return trans
+
+
+def find_disabled_transgoods_record(trans_key, goods_info_list):
+    try:
+        disabled_transgoods_list = TransGoodsInfo.objects.filter(trans_key=trans_key, enabled_key=0)
+    except (KeyError, TransGoodsInfo.DoesNotExist):
+        disabled_transgoods_list = []
+
+    if len(disabled_transgoods_list) is 0:
+        transgoods = TransGoodsInfo()
+        transgoods.trans_key = trans_key
+        transgoods.goods_key = goods_info_list[0]
+        transgoods.save()
+    else:
+        transgoods = disabled_transgoods_list[0]
+
+    return transgoods
+
+
+def get_trans_details_info(trans, picture_info_cache):
     transgoods_info_list = []
 
     try:
         transgoods_list = TransGoodsInfo.objects.filter(trans_key=trans.id)
         for transgoods in transgoods_list:
+            print("transgoods:" + transgoods.__str__())
             picture_info_list = get_picture_info_list(transgoods.goods_key.id, picture_info_cache)
-            transgoods_cost_info_list = get_transgoods_cost_list(transgoods.id, cost_info_cache)
+            transgoods_cost_info_list = get_transgoods_cost_list(transgoods.id)
+
+            provider_name = transgoods.goods_key.goods_provider.company_name_text
+            goods_name = transgoods.goods_key.goods_name_text
+
             transgoods_info = {
                 'transgoods': transgoods,
+                'provider_name': provider_name,
+                'goods_name': goods_name,
                 'picture_info_list': picture_info_list,
                 'transgoods_cost_info_list': transgoods_cost_info_list
             }
@@ -146,7 +188,8 @@ def get_trans_details_info(trans, picture_info_cache, cost_info_cache):
     except (KeyError, TransGoodsInfo.DoesNotExist):
         transgoods_info_list = []
 
-    trans_cost_list = get_trans_cost_list(trans.id, cost_info_cache)
+    trans_cost_list = get_trans_cost_list(trans.id)
+    print("get_trans_details_info, trans:" + str(trans))
     trans_details = {
             'trans': trans,
             'transgoods_info_list': transgoods_info_list,
@@ -157,67 +200,28 @@ def get_trans_details_info(trans, picture_info_cache, cost_info_cache):
 
 
 # get cost list for trans goods with trans_id
-def get_transgoods_cost_list(transgoods_id, cost_info_cache):
+def get_transgoods_cost_list(transgoods_id):
     try:
         trans_goods_cost_list = TransGoodsCostInfo.objects.filter(trans_goods_info_key=transgoods_id)
     except (KeyError, TransGoodsCostInfo.DoesNotExist):
         return []
 
-    trans_goods_cost_info_list = []
-    for trans_goods_cost in trans_goods_cost_list:
-        cost_info = None
-        if len(cost_info_cache) > 0:
-            for cost in cost_info_cache:
-                if cost.id == trans_goods_cost.cost_key:
-                    cost_info = cost
-
-        if cost_info is None:
-            try:
-                cost_info = CostInfo.objects.filter(id=trans_goods_cost.cost_key)
-                cost_info_cache.append(cost_info)
-            except (KeyError, CostInfo.DoesNotExist):
-                cost_info = None
-                print("cost info not found for TransGoodsCostInfo:" + trans_goods_cost)
-
-        if cost_info is not None:
-            trans_goods_cost_info_list.append(cost_info)
-
-    return trans_goods_cost_info_list
+    return trans_goods_cost_list
 
 
 # get cost list for trans with trans_id
-def get_trans_cost_list(trans_id, cost_info_cache):
+def get_trans_cost_list(trans_id):
     try:
         trans_cost_list = TransCostInfo.objects.filter(trans_info_key_id=trans_id)
     except (KeyError, TransCostInfo.DoesNotExist):
         return []
 
     print(trans_cost_list)
-
-    trans_cost_info_list = []
-    for trans_cost in trans_cost_list:
-        cost_info = None
-        if len(cost_info_cache) > 0:
-            for cost_item in cost_info_cache:
-                if cost_item.id == trans_cost.cost_key:
-                    cost_info = cost_item
-
-        if cost_info is None:
-            try:
-                cost_info = CostInfo.objects.filter(id=trans_cost.cost_key)
-                cost_info_cache.append(cost_info)
-            except (KeyError, CostInfo.DoesNotExist):
-                cost_info = None
-                print("cost info not found for TransCostInfo:" + trans_cost)
-
-        if cost_info is not None:
-            trans_cost_info_list.append(cost_info)
-
-    return trans_cost_info_list
+    return trans_cost_list
 
 
 # get trans details info with trans goods info with cost list and trans cost list
-def get_trans_detail_info(trans, goods_info_cache, cost_info_cache):
+def get_trans_detail_info(trans, goods_info_cache):
     try:
         trans_goods_list = TransGoodsInfo.objects.filter(id=trans.id)
     except (KeyError, GoodsInfo.DoesNotExist):
@@ -226,8 +230,8 @@ def get_trans_detail_info(trans, goods_info_cache, cost_info_cache):
     trans_goods_info_list = []
 
     for trans_goods_info in trans_goods_list:
-        goods_info = get_goodsinfo_in_list_or_db(goods_info_cache, trans_goods_info.goods_key)
-        goods_cost_list = get_transgoods_cost_list(cost_info_cache, trans_goods_info.id)
+        goods_info = get_goodsinfo_in_list_or_db(trans_goods_info.goods_key.id, goods_info_cache)
+        goods_cost_list = get_transgoods_cost_list(trans_goods_info.id)
 
         trans_goods_detail_info = {
             'trans_goods_info': trans_goods_info,
@@ -240,7 +244,7 @@ def get_trans_detail_info(trans, goods_info_cache, cost_info_cache):
     trans_detail_info = {
         'trans': trans,
         'trans_goods_info_list': trans_goods_info_list,
-        'trans_cost_list': get_trans_cost_list(trans.id, cost_info_cache),
+        'trans_cost_list': get_trans_cost_list(trans.id),
     }
 
     return trans_detail_info

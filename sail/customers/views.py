@@ -1,17 +1,21 @@
+import json
+
 from django.shortcuts import render, get_object_or_404, render_to_response
 
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template import loader
 
-from .models import Customer, ContactInfo, CustomerTransInfo, CustomerTransGoodsInfo, PictureInfo,\
+from .models import Customer, ContactInfo, PictureInfo,\
     GoodsInfo, TransInfo, TransGoodsInfo, TransGoodsCostInfo, TransCostInfo, CostInfo, ProviderInfo
 
-from .forms import AddCustomer, ContactInfoForm, TransInfoForm, TransGoodsInfo, PictureInfo,\
+from .forms import AddCustomer, ContactInfoForm, TransInfoForm, TransGoodsInfoForm, PictureInfo,\
     TransInfoForm, QuickAddTransInfoForm, GoodsInfoForm, ProviderInfoForm, CostInfoForm
 
 from .db_helper import get_trans_details_list_for_customer, get_trans_detail_info, \
     get_goods_info_list, get_goods_info, get_trans_info_list, getContactList, \
-    get_providers_info_list, get_provider_info, get_costs_info_list, get_cost_info
+    get_providers_info_list, get_provider_info, get_costs_info_list, get_cost_info, \
+    find_disabled_trans_record, find_disabled_transgoods_record, get_trans_cost_list, \
+    get_transgoods_cost_list
 
 
 # Create your views here.
@@ -25,7 +29,7 @@ def customer_index(request):
     try:
         # TODO: limit count of db search
         customers_list = Customer.objects.all()
-    except (KeyError, CustomerTransInfo.DoesNotExist):
+    except (KeyError, Customer.DoesNotExist):
         customers_list = []
 
     customer_info_list = []
@@ -99,11 +103,10 @@ def customer_detail(request, customer_id):
 
     # cache to reduce db search
     goods_info_cache = []
-    cost_info_cache = []
 
     trans_info_list = []
     for trans in trans_list:
-        trans_info_list.append(get_trans_detail_info(trans, goods_info_cache, cost_info_cache))
+        trans_info_list.append(get_trans_detail_info(trans, goods_info_cache))
 
     return render(request, 'customers/detail.html', {
         'customer_info': customer_info,
@@ -382,6 +385,80 @@ def add_cost(request):
     return render(request, 'customers/addtemplate.html', context)
 
 
+def add_cost_direct(request):
+    trans_id = request.GET.get('trans_id', -1)
+    transgoods_id = request.GET.get('transgoods_id', -1)
+    cost_id = request.GET.get('cost_id', -1)
+    cost_name = request.GET.get('cost_name', "")
+    cost_value = request.GET.get('cost_value', -1)
+
+    print("add_cost_direct:" + str(trans_id))
+    message = ''
+    if cost_id is not -1:
+        try:
+            cost = CostInfo.objects.get(id=cost_id)
+        except (KeyError, TransInfo.DoesNotExist):
+            cost = None
+    else:
+        cost = None
+
+    if cost is not None:
+        if cost_value is not -1 and cost_name is not "":
+            if cost.cost_name_text == cost_name and cost.cost_price_float == cost_value:
+                cost_name = ''
+                cost_value = 0
+            else:
+                cost = None
+
+    if cost is None and cost_value is not -1 and cost_name is not "":
+        cost = CostInfo()
+        cost.cost_name_text = cost_name
+        cost.cost_price_float = cost_value
+        cost.save()
+    else:
+        message = '费用信息错误'
+
+    redirect = None
+    if trans_id is not -1:
+        try:
+            trans = TransInfo.objects.get(id=trans_id)
+        except (KeyError, TransInfo.DoesNotExist):
+            trans = None
+            message = '交易信息不存在！'
+
+        if trans is not None and cost is not None:
+            transgoods_cost = TransCostInfo()
+            transgoods_cost.cost_key = cost
+            transgoods_cost.trans_info_key = trans
+            transgoods_cost.save()
+            redirect = "/trans/customers/trans/edit/" + str(trans_id)
+    elif transgoods_id is not -1:
+        try:
+            transgoods = TransGoodsInfo.objects.get(id=transgoods_id)
+        except (KeyError, TransGoodsInfo.DoesNotExist):
+            trans = None
+            message = '信息不存在！'
+
+        if transgoods is not None and cost is not None:
+            transgoods_cost = TransGoodsCostInfo()
+            transgoods_cost.cost_key = cost
+            transgoods_cost.trans_goods_info_key = transgoods
+            transgoods_cost.save()
+            redirect = "/trans/customers/transgoods/edit/" + str(transgoods_id)
+    else:
+        message = "交易信息或交易货物信息不存在"
+
+    if redirect is not None:
+        return HttpResponseRedirect(redirect)  # 跳转
+
+    context = {
+        'message': message
+    }
+
+    #return render(request, 'customers/addtemplate.html', context)
+    return HttpResponse(status=406)
+
+
 def edit_cost(request, cost_id):
     cost_info = get_cost_info(cost_id)
 
@@ -516,142 +593,303 @@ def trans_list_of_customer(request, customer_id):
 
 
 def add_trans(request, customer_id):
+    try:
+        customer_key = Customer.objects.get(id=customer_id)
+    except (KeyError, Customer.DoesNotExist):
+        context = {"title": "添加交易信息",
+                   "message": "客户不存在，请先添加联系人信息!",
+                   "redirect": "/trans/customers/"
+                   }
+        return render(request, 'customers/addtemplate.html', context)
+
+    contacts = getContactList(customer_key.id)
+    if len(contacts) == 0:
+        context = {"title": "添加交易信息",
+                   "message": "联系人信息不存在，请先添加联系人信息!",
+                   "redirect": "/trans/customers/"
+                   }
+        return render(request, 'customers/addtemplate.html', context)
+
+    trans = find_disabled_trans_record(customer_key, contacts)
+
+    return HttpResponseRedirect('/trans/customers/trans/edit/' + str(trans.id))  # 跳转
+
+
+def edit_trans(request, trans_id):
+    try:
+        trans = TransInfo.objects.get(id=trans_id)
+    except (KeyError, TransInfo.DoesNotExist):
+        context = {"title": "编辑交易信息",
+                   "message": "交易不存在,请重试!",
+                   "redirect": "/trans/customers/contact/add"
+                   }
+        return render(request, 'customers/addtemplate.html', context)
+
     message = ''
-    contacts = getContactList(customer_id)
+    contacts = getContactList(trans.customer_key.id)
     print(contacts)
 
     if len(contacts) is 0:
-        context = {"title": "添加交易信息",
+        context = {"title": "编辑交易信息",
                    "message": "联系人信息不存在，请先添加联系人信息!",
                    "redirect": "/trans/customers/contact/add"
                    }
         return render(request, 'customers/addtemplate.html', context)
 
-    choices = []
-    if len(contacts) > 0:
-        for contact in contacts:
-            choices.append((contact.name_text, contact.name_text))
+    goods_info_list = get_goods_info_list()
+
+    if len(goods_info_list) is 0:
+        context = {"title": "编辑交易信息",
+                   "message": "货物信息不存在，请先添加货物信息!",
+                   "redirect": "/trans/goods/add"
+                   }
+        return render(request, 'customers/addtemplate.html', context)
+
+    contacts_choices = []
+    for contact in contacts:
+        contacts_choices.append((contact.id, contact.name_text))
+
+    goods_choices = []
+    sep = '-'
+    for goods_info in goods_info_list:
+        info_list = []
+        info_list.append(goods_info.goods_provider.company_name_text)
+        info_list.append(goods_info.goods_name_text)
+        info_list.append(str(goods_info.goods_cost_float) + '(进货价)')
+        goods_choices.append((goods_info.id, sep.join(info_list)))
+
+    print(contacts_choices)
+    print(goods_choices)
 
     if request.method == "POST":
-        fr = TransInfoForm(choices, request.POST)
+        fr = TransInfoForm(contacts_choices, goods_choices, request.POST)
 
-        print(choices)
-        #print(fr)
+        print(fr)
+        redirect = '/trans/customers/' + str(trans.customer_key.id)
+
+        print(fr.is_valid())
         if fr.is_valid():
-            try:
-                customer_key = Customer.objects.get(id=customer_id)
-            except (KeyError, Customer.DoesNotExist):
-                return HttpResponseRedirect('/trans/customers/')  # 跳转
-
-            trans = TransInfo()
-            trans.customer_key = customer_key
-            trans.trans_name_text = ""
+            trans.enabled_key = 1
+            trans.trans_name_text = fr.cleaned_data['trans_name_text']
             trans.trans_order_number_text = fr.cleaned_data['trans_order_number_text']
-            #trans.contact_key = fr.cleaned_data['contact_key']
-            print(fr.cleaned_data['contact_key'])
+            print(fr.cleaned_data['trans_handler_name_text'])
+            trans.contract_name_text = fr.cleaned_data['contract_name_text']
 
             try:
-                contact = ContactInfo.objects.get(customer=customer_id, name_text=fr.cleaned_data['contact_key'])
+                contact = ContactInfo.objects.get(id=fr.cleaned_data['trans_handler_name_text'])
                 trans.contact_key = contact
             except (KeyError, ContactInfo.DoesNotExist):
                 contact = None
 
-            print(contact)
-
             trans.trans_fax_int = fr.cleaned_data['trans_fax_int']
+            trans.trans_payment_float = fr.cleaned_data['trans_payment_float']
+            trans.trans_reduction_float = fr.cleaned_data['trans_reduction_float']
             trans.trans_date = fr.cleaned_data['trans_date']
-            trans.goods_delivery_date = fr.cleaned_data['goods_delivery_date']
+            trans.goods_delivery_date = fr.cleaned_data['trans_delivery_date']
             trans.comment_text = fr.cleaned_data['comment_text']
-            trans.save()
-
-            return HttpResponseRedirect('/trans/customers/' + customer_id)  # 跳转
-    else:
-        fr = TransInfoForm(choices)
-
-    context = {"form": fr,
-               "title": "添加交易信息",
-               "message": message
-               }
-
-    print(choices)
-
-    return render(request, 'customers/addtemplate.html', context)
-
-
-def edit_trans(request, trans_id):
-    error_message = ''
-    message = ''
-    try:
-        trans = CustomerTransInfo.objects.get(id=trans_id)
-    except (KeyError, CustomerTransInfo.DoesNotExist):
-        error_message = '客户不存在,请重试!'
-
-    print(trans)
-
-    if error_message == '' and request.method == "POST":
-        fr = TransInfoForm(request.POST)
-
-        print(fr)
-        redirect = '/customers/' + str(trans.customer_id)
-
-        print(fr.is_valid())
-        if fr.is_valid():
-            trans.trans_name_text = fr.cleaned_data['trans_name_text']
-            print(trans.trans_name_text)
-            trans.trans_handler_name_text = fr.cleaned_data['trans_handler_name_text']
-            trans.trans_total_num_int = fr.cleaned_data['trans_total_num_int']
-            trans.trans_payment_int = fr.cleaned_data['trans_payment_int']
-            trans.trans_fax_int = fr.cleaned_data['trans_fax_int']
-            trans.trans_expenses_int = fr.cleaned_data['trans_expenses_int']
-            trans.trans_other_charge_int = fr.cleaned_data['trans_other_charge_int']
-            trans.trans_date = fr.cleaned_data['trans_date']
-            trans.trans_delivery_date = fr.cleaned_data['trans_delivery_date']
-            trans.trans_order_number_text = fr.cleaned_data['trans_order_number_text']
-            trans.trans_comment_text = fr.cleaned_data['trans_comment_text']
             trans.save()
             return HttpResponseRedirect(redirect)  # 跳转
 
         context = {"form": fr,
-                   "title": "修改交易信息",
-                   "message": message
-                   }
-    elif error_message == "":
-        fr = TransInfoForm(initial={'trans_name_text': trans.trans_name_text,
-                              'trans_handler_name_text': trans.trans_handler_name_text,
-                              'trans_total_num_int': trans.trans_total_num_int,
-                              'trans_payment_int': trans.trans_payment_int,
-                              'trans_fax_int': trans.trans_fax_int,
-                              'trans_expenses_int': trans.trans_expenses_int,
-                              'trans_other_charge_int': trans.trans_other_charge_int,
-                              'trans_date': trans.trans_date,
-                              'trans_delivery_date': trans.trans_delivery_date,
-                              'trans_order_number_text': trans.trans_order_number_text,
-                              'trans_comment_text': trans.trans_comment_text})
-
-        print(fr)
-        contacts = getContactList(trans.customer.id)
-        print(contacts)
-
-        if len(contacts) > 0:
-            fr.fields['trans_handler_name_text'].widget.choices = contacts
-        else:
-            message = "联系人不存在，请添加！"
-
-        context = {"form": fr,
-                   "title": "修改交易信息",
+                   "title": "编辑交易信息",
                    "message": message
                    }
     else:
-        context = {"error_message": error_message}
+        fr = TransInfoForm(contacts_choices, goods_choices, initial={
+            'trans_name_text': trans.trans_name_text,
+            'trans_order_number_text': trans.trans_order_number_text,
+            'contract_name_text': trans.contract_name_text,
+            'contact_key': trans.contact_key.id,
+            'trans_fax_int': trans.trans_fax_int,
+            'trans_payment_float': trans.trans_payment_float,
+            'trans_reduction_float': trans.trans_reduction_float,
+            'trans_date': trans.trans_date,
+            'goods_delivery_date': trans.goods_delivery_date,
+            'comment_text': trans.comment_text})
+
+        trans_cost_list = get_trans_cost_list(trans.id)
+        cost_list = get_costs_info_list()
+
+        print(fr)
+        context = {"form": fr,
+                   "title": "编辑交易信息",
+                   "message": message,
+                   "cost_list": cost_list,
+                   "extra_info": "trans_id",
+                   "extra_id": str(trans_id),
+                   "extra_cost_list": trans_cost_list
+                   }
 
     return render(request, 'customers/addtemplate.html', context)
+
+
+def del_trans(request, trans_id):
+    try:
+        trans = TransInfo.objects.get(id=trans_id)
+    except (KeyError, TransInfo.DoesNotExist):
+        context = {"title": "删除交易信息",
+                   "message": "交易不存在,请重试!",
+                   "redirect": "/trans/customers/contact/add"
+                   }
+        return render(request, 'customers/addtemplate.html', context)
+
+    redirect = '/trans/customers/' + str(trans.customer_key.id)
+    trans.delete()
+    return HttpResponseRedirect(redirect)  # 跳转
+
+
+def del_trans_cost(request, trans_cost_id):
+    try:
+        trans_cost_info = TransCostInfo.objects.get(id=trans_cost_id)
+    except (KeyError, TransCostInfo.DoesNotExist):
+        trans_cost_info = None
+
+    if trans_cost_info is not None:
+        redirect = '/trans/customers/trans/edit/' + str(trans_cost_info.trans_info_key.id)
+        trans_cost_info.delete()
+    else:
+        context = {
+                   "message": "花费记录不存在!"
+                   }
+        return render(request, 'customers/addtemplate.html', context)
+
+    return HttpResponseRedirect(redirect)  # 跳转
+
+
+def add_transgoods(request, trans_id):
+    try:
+        trans = TransInfo.objects.get(id=trans_id)
+    except (KeyError, TransInfo.DoesNotExist):
+        context = {"title": "添加交易物品信息",
+                   "message": "交易不存在,请重试!",
+                   "redirect": "/trans/customers/contact/add"
+                   }
+        return render(request, 'customers/addtemplate.html', context)
+
+    goods_info_list = get_goods_info_list()
+    if len(goods_info_list) is 0:
+        context = {"title": "添加交易物品信息",
+                   "message": "货物信息不存在，请先添加货物信息!",
+                   "redirect": "/trans/goods/add"
+                   }
+        return render(request, 'customers/addtemplate.html', context)
+
+    transgoods = find_disabled_transgoods_record(trans, goods_info_list)
+
+    return HttpResponseRedirect('/trans/customers/transgoods/edit/' + str(transgoods.id))  # 跳转
+
+
+def edit_transgoods(request, transgoods_id):
+    try:
+        transgoods = TransGoodsInfo.objects.filter(id=transgoods_id)[0]
+    except (KeyError, TransGoodsInfo.DoesNotExist):
+        context = {"title": "编辑交易物品信息",
+                   "message": "交易物品不存在,请重试!",
+                   "redirect": "/trans/customers/"
+                   }
+        return render(request, 'customers/addtemplate.html', context)
+
+    goods_info_list = get_goods_info_list()
+
+    if len(goods_info_list) is 0:
+        context = {"title": "编辑交易物品信息",
+                   "message": "货物信息不存在，请先添加货物信息!",
+                   "redirect": "/trans/goods/add"
+                   }
+        return render(request, 'customers/addtemplate.html', context)
+
+    goods_choices = []
+    sep = '-'
+    for goods_info in goods_info_list:
+        info_list = []
+        info_list.append(goods_info.goods_provider.company_name_text)
+        info_list.append(goods_info.goods_name_text)
+        info_list.append(str(goods_info.goods_cost_float) + '(进货价)')
+        goods_choices.append((goods_info.id, sep.join(info_list)))
+
+    if request.method == "POST":
+        fr = TransGoodsInfoForm(goods_choices, request.POST)
+        if fr.is_valid():
+            try:
+                goods = GoodsInfo.objects.get(id=fr.cleaned_data['goods_key'])
+                transgoods.goods_key = goods
+            except (KeyError, GoodsInfo.DoesNotExist):
+                contact = None
+
+            transgoods.enabled_key = 1
+            transgoods.num_int = fr.cleaned_data['num_int']
+            transgoods.price_float = fr.cleaned_data['price_float']
+            transgoods.price_quoted_float = fr.cleaned_data['price_quoted_float']
+            transgoods.goods_color_text = fr.cleaned_data['goods_color_text']
+            transgoods.comment_text = fr.cleaned_data['comment_text']
+            transgoods.save()
+
+            print("transgoods:")
+            print(transgoods)
+
+            return HttpResponseRedirect('/trans/customers/' + str(transgoods.trans_key.customer_key.id))  # 跳转
+    else:
+        fr = TransGoodsInfoForm(goods_choices, initial={
+            'goods_key': transgoods.goods_key.id,
+            'num_int': transgoods.num_int,
+            'price_float': transgoods.price_float,
+            'price_quoted_float': transgoods.price_quoted_float,
+            'goods_color_text': transgoods.goods_color_text,
+            'comment_text': transgoods.comment_text,
+        })
+
+        cost_list = get_costs_info_list()
+        transgoods_cost_list = get_transgoods_cost_list(transgoods_id)
+        context = {"form": fr,
+                   "title": "编辑交易物品信息",
+                   "message": "",
+                   "cost_list": cost_list,
+                   "extra_info": "transgoods_id",
+                   "extra_id": str(transgoods_id),
+                   "extra_cost_list": transgoods_cost_list
+                   }
+
+    return render(request, 'customers/addtemplate.html', context)
+
+
+def del_transgoods(request, transgoods_id):
+    try:
+        transgoods = TransGoodsInfo.objects.filter(id=transgoods_id)[0]
+    except (KeyError, TransGoodsInfo.DoesNotExist):
+        context = {"title": "删除交易物品信息",
+                   "message": "交易物品不存在,请重试!",
+                   "redirect": "/trans/customers/"
+                   }
+        return render(request, 'customers/addtemplate.html', context)
+
+    redirect = '/trans/customers/' + str(transgoods.trans_key.customer_key.id)
+    transgoods.delete()
+    return HttpResponseRedirect(redirect)  # 跳转
+
+
+def del_transgoods_cost(request, transgoods_cost_id):
+    try:
+        transgoods_cost_info = TransGoodsCostInfo.objects.get(id=transgoods_cost_id)
+    except (KeyError, TransGoodsCostInfo.DoesNotExist):
+        transgoods_cost_info = None
+
+    if transgoods_cost_info is not None:
+        redirect = '/trans/customers/transgoods/edit/' + str(transgoods_cost_info.trans_goods_info_key.trans_key.id)
+        transgoods_cost_info.delete()
+    else:
+        context = {
+                   "message": "花费记录不存在!"
+                   }
+        return render(request, 'customers/addtemplate.html', context)
+
+    return HttpResponseRedirect(redirect)  # 跳转
 
 
 def add_picture(request, trans_id):
     if request.method == "POST":
         fr = PictureInfo(request.POST)
         if fr.is_valid():
-            trans = CustomerTransInfo.objects.get(id=trans_id)
+            trans = TransInfo.objects.get(id=trans_id)
             picture = PictureInfo()
             picture.customer_trans_info = trans
             picture.trans_goods_picture_name_text = fr.cleaned_data['trans_goods_picture_name_text']

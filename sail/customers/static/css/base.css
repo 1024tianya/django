@@ -850,6 +850,26 @@ table#change-history tbody th {
     color: rgba(255, 0, 0, 0.69);
 }
 
+/* trans info table style */
+#trans_info_table th{
+    padding-left: 5px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-right: 5px;
+    font-size: smaller;
+    color: GrayText;
+    background-color: #f4f4f7;
+}
+
+/* trans info table style */
+#trans_info_table th{
+    padding-left: 5px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-right: 5px;
+}
+
+
 #branding {
     float: left;
 }

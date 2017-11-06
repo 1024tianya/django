@@ -49,43 +49,6 @@ class ContactInfo(models.Model):
         verbose_name_plural = "联系人信息"
 
 
-# TODO: delete it
-@python_2_unicode_compatible  # only if you need to support Python 2
-class CustomerTransInfo(models.Model):
-    # ...
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
-    trans_name_text = models.CharField(max_length=100, verbose_name="名称")
-    trans_handler_name_text = models.CharField(max_length=100, verbose_name="经办人")
-    trans_total_num_int = models.IntegerField(default=0, blank=True, verbose_name="数量")
-    trans_payment_int = models.IntegerField(default=0, blank=True, verbose_name="货款")
-    trans_fax_int = models.IntegerField(default=0, blank=True, verbose_name="税点")
-    trans_expenses_int = models.IntegerField(default=0, blank=True, verbose_name="运费")
-    trans_other_charge_int = models.IntegerField(default=0, blank=True, verbose_name="其它成本")
-    trans_date = models.DateTimeField(verbose_name="交易日期", blank=True)
-    trans_delivery_date = models.DateTimeField(verbose_name="交货日期", blank=True, null=True)
-    trans_order_number_text = models.CharField(max_length=100, blank=True, verbose_name="订单号")
-    trans_comment_text = models.CharField(max_length=1000, blank=True, verbose_name="备注")
-
-
-# TODO: delete it
-class CustomerTransGoodsInfo(models.Model):
-    # ...
-    def __str__(self):
-        return self.trans_goods_name_text
-
-    customer_trans_info = models.ForeignKey(CustomerTransInfo, on_delete=models.CASCADE)
-    trans_goods_name_text = models.CharField(max_length=100, verbose_name="货物名称")
-    trans_goods_num_int = models.IntegerField(default=0, verbose_name="数量")
-    trans_goods_color_text = models.CharField(max_length=100, verbose_name="颜色")
-    trans_goods_offer_int = models.IntegerField(default=0, verbose_name="报价")
-    trans_goods_price_int = models.IntegerField(default=0, verbose_name="单价")
-    trans_goods_cost_int = models.IntegerField(default=0, verbose_name="成本")
-    trans_goods_processing_charge_int = models.IntegerField(default=0, verbose_name="加工成本")
-    trans_goods_other_charge_int = models.IntegerField(default=0, verbose_name="其它成本")
-    trans_goods_payment_int = models.IntegerField(default=0, verbose_name="货款")
-    trans_goods_comment_text = models.CharField(max_length=1000, blank=True, verbose_name="备注")
-
-
 class ProviderInfo(models.Model):
     # ...
     def __str__(self):
@@ -100,10 +63,6 @@ class ProviderInfo(models.Model):
 ###
 # goods library
 class GoodsInfo(models.Model):
-    # ...
-    def __str__(self):
-        return self.goods_name_text
-
     goods_provider = models.ForeignKey(ProviderInfo)
     goods_name_text = models.CharField(max_length=100, verbose_name="名称")
     goods_price_float = models.FloatField(default=0, verbose_name="单价")
@@ -111,6 +70,13 @@ class GoodsInfo(models.Model):
     # auto add
     add_date = models.DateTimeField(auto_now_add=True, verbose_name="添加日期")
     comment_text = models.CharField(max_length=1000, blank=True, verbose_name="备注")
+
+    def __str__(self):
+        goods_info = self.goods_provider.company_name_text + ", "\
+                     + self.goods_name_text + ", "\
+                     + str(self.goods_price_float) + ", " \
+                     + str(self.goods_cost_float)
+        return goods_info
 
     class Meta:
         verbose_name = "货物信息"
@@ -132,16 +98,27 @@ class PictureInfo(models.Model):
 class TransInfo(models.Model):
     # ...
     customer_key = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    enabled_key = models.IntegerField(default=0, blank=False)
     trans_name_text = models.CharField(max_length=100, verbose_name="交易名称")
     trans_order_number_text = models.CharField(max_length=100, blank=True, verbose_name="订单号")
+    contract_name_text = models.CharField(max_length=100, verbose_name="合同编号")
     # 经办人
     contact_key = models.ForeignKey(ContactInfo)
     trans_fax_int = models.IntegerField(default=0, blank=True, verbose_name="税点")
+    trans_payment_float = models.FloatField(default=0, blank=True, verbose_name="总货款")
+    trans_reduction_float = models.FloatField(default=0, blank=True, verbose_name="优惠")
     trans_date = models.DateField(verbose_name="交易日期", blank=True, null=True)
     goods_delivery_date = models.DateField(verbose_name="交货日期", blank=True, null=True)
     # auto add
     add_date = models.DateTimeField(auto_now_add=True, verbose_name="添加日期")
     comment_text = models.CharField(max_length=1000, blank=True, verbose_name="备注")
+
+    def __str__(self):
+        trans_info = self.customer_key.customer_company_name_text + ", "\
+                     + self.trans_name_text + ", "\
+                     + self.trans_order_number_text + ", " \
+                     + self.contact_key.name_text
+        return trans_info
 
     class Meta:
         verbose_name = "交易信息"
@@ -149,13 +126,21 @@ class TransInfo(models.Model):
 
 
 class TransGoodsInfo(models.Model):
+    enabled_key = models.IntegerField(default=0, blank=False)
     trans_key = models.ForeignKey(TransInfo, on_delete=models.CASCADE)
-    goods_key = models.ForeignKey(GoodsInfo)
+    goods_key = models.ForeignKey(GoodsInfo, blank=True)
     num_int = models.IntegerField(default=0, verbose_name="数量")
     price_float = models.FloatField(default=0, verbose_name="成交单价")
     price_quoted_float = models.FloatField(default=0, verbose_name="报价")
     goods_color_text = models.CharField(max_length=100, verbose_name="颜色")
     comment_text = models.CharField(max_length=1000, blank=True, verbose_name="备注")
+
+    def __str__(self):
+        goods_info = self.trans_key.__str__() + ", "\
+                     + self.goods_key.__str__() + ", "\
+                     + str(self.num_int) + ", "\
+                     + str(self.price_float)
+        return goods_info
 
     class Meta:
         verbose_name = "交易货物信息"
