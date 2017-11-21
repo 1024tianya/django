@@ -19,23 +19,23 @@
             </div>
 
             <!-- trans info content area-->
-            <div style="padding-left: 5px; padding-right: 5px">
+            <div>
                 <table class="trans_info_table" style="width: 100%;">
                     <tbody>
                     <tr>
-                        <th style="padding-top: 2px; padding-bottom: 2px; padding-left: 10px; padding-right: 5px; margin: 0px; width: 30%; font-size: smaller; color: GrayText; background-color: #f4f4f7">
+                        <th style="padding-top: 2px; padding-bottom: 2px; padding-right: 5px; margin: 0px; width: 30%; font-size: smaller; color: GrayText; background-color: #e5e5e5">
                             货品
                         </th>
-                        <th style="padding-top: 2px; padding-bottom: 2px; padding-left: 10px; padding-right: 5px; margin: 0px; width: 10%; font-size: smaller; color: GrayText; background-color: #f4f4f7">
+                        <th style="padding-top: 2px; padding-bottom: 2px; padding-left: 10px; padding-right: 5px; margin: 0px; width: 10%; font-size: smaller; color: GrayText; background-color: #e5e5e5">
                             价格
                         </th>
-                        <th style="padding-top: 2px; padding-bottom: 2px; padding-left: 10px; padding-right: 5px; margin: 0px; width: 10%; font-size: smaller; color: GrayText; background-color: #f4f4f7">
+                        <th style="padding-top: 2px; padding-bottom: 2px; padding-left: 10px; padding-right: 5px; margin: 0px; width: 10%; font-size: smaller; color: GrayText; background-color: #e5e5e5">
                             数量
                         </th>
-                        <th style="padding-top: 2px; padding-bottom: 2px; padding-left: 10px; padding-right: 5px; margin: 0px; width: 10%; font-size: smaller; color: GrayText; background-color: #f4f4f7">
+                        <th style="padding-top: 2px; padding-bottom: 2px; padding-left: 10px; padding-right: 5px; margin: 0px; width: 10%; font-size: smaller; color: GrayText; background-color: #e5e5e5">
                             货款
                         </th>
-                        <th style="padding-top: 2px; padding-bottom: 2px; padding-left: 10px; padding-right: 5px; margin: 0px; width: 20%; font-size: smaller; color: GrayText; background-color: #f4f4f7">
+                        <th style="padding-top: 2px; padding-bottom: 2px; padding-left: 10px; padding-right: 5px; margin: 0px; width: 20%; font-size: smaller; color: GrayText; background-color: #e5e5e5">
                             备注
                         </th>
                     </tr>
@@ -43,9 +43,9 @@
                 </table>
                 {% if trans_info_list %}
                     {% for trans_details_info in trans_info_list %}
-                        <div id="trans_details_info" style="width:100%; padding-top: 2px">
+                        <div id="trans_details_info" style="width:100%; padding-left: 3px; padding-right: 3px">
                             <!-- trans title info -->
-                            <div style="padding:2px; background-color: #d2e4fd">
+                            <div style="padding:3px; background-color: #d2e4fd;">
                                 {% if trans_details_info.trans.trans_order_number_text|cut:' '|length != 0 %}
                                     <span style="padding-left: 5px">交易单号:</span>
                                     <span style="min-width:20px;font-size: small; color: GrayText">{{ trans_details_info.trans.trans_order_number_text }}</span>
@@ -74,7 +74,7 @@
                                 <b> - </b><u><a href="{% url 'add_transgoods' trans_details_info.trans.id %}" target="_parent">添加货物信息</a></u>
 
                                 <a href="javascript:if(confirm('确实要删除吗?'))location='{% url 'del_trans' trans_details_info.trans.id %}'" target="_parent">
-                                    <img src="/static/img/inline-delete.svg">
+                                    <img src="/static/img/inline-delete.svg" style="float: right; padding-top: 3px; padding-right: 3px" />
                                 </a>
                             </div>
 

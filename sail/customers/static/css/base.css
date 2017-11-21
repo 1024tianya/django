@@ -251,7 +251,7 @@ td, th {
     line-height: 16px;
     border-bottom: 1px solid #eee;
     vertical-align: top;
-    padding: 8px;
+    padding: 5px;
     font-family: "Roboto", "Lucida Grande", Verdana, Arial, sans-serif;
 }
 
@@ -675,7 +675,7 @@ a.deletelink:focus, a.deletelink:hover {
     padding-left: 0;
     float: right;
     position: relative;
-    margin-top: -48px;
+    margin-top: -32px;
 }
 
 .form-row .object-tools {
@@ -750,14 +750,6 @@ table#change-history tbody th {
     padding: 0;
 }
 
-#content {
-    padding: 20px 40px;
-}
-
-.dashboard #content {
-    width: 600px;
-}
-
 #content-main {
     float: left;
     width: 100%;
@@ -803,7 +795,7 @@ table#change-history tbody th {
 
 #header {
     width: auto;
-    height: 60px;
+    height: 65px;
     padding: 10px 40px;
     background: #417690;
     line-height: 40px;

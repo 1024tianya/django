@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <title>客户管理系统</title>
+    <link rel="stylesheet" type="text/css" href="/static/css/base.css"/>
+</head>
+<body class="dashboard"
+      data-admin-utc-offset="28800" style="background-color:#f4f4ff">
+
+<!-- Container -->
+<div id="container">
+    <!-- Header -->
+    <div id="header">
+        <div id="branding">
+            <h1 style="font-size: xx-large">
+                <a href="/">
+                    <span>客户管理系统</span>
+                    <span style="font-size: large"> - 设计源于生活，细节成就品质。</span>
+                </a>
+            </h1>
+        </div>
+        <div id="user-tools">
+
+            Welcome
+            <!--,
+            <strong>admin</strong>.
+                <a href="/">View site</a> /
+                <a href="/admin/password_change/">Change password</a> /
+
+                <a href="/admin/logout/">Log out</a>
+            -->
+        </div>
+
+        <hr id="nav-hr"/>
+        <div id="nav" style="font-size: large">
+            <ul>
+                <li><a href="/customers/" class="indexItem">客户管理</a></li>
+                <li><a href="/goods/" class="indexItem">货物管理</a></li>
+                <li><a href="/costs/" class="indexItem">成本管理</a></li>
+                <li><a href="/providers/" class="indexItem">供应商管理</a></li>
+            </ul>
+        </div>
+    </div>
+    <!-- END Header -->
+
+    <div style="padding-top:5px; padding-left:50px;padding-right: 50px;">
+        {% block content_header %}
+        {% endblock content_header %}
+
+        <div>
+            {% block content %}
+            {% endblock content %}
+        </div>
+    </div>
+
+</div> <!-- end container -->
+</body>
+</html>
+

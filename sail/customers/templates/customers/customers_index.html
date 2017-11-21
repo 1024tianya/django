@@ -1,0 +1,24 @@
+{% extends "common/base.html" %}
+
+{% block content_header %}
+    <h1 style="font-size: x-large">客户列表</h1>
+{% endblock content_header %}
+
+{% block content %}
+    <div>
+        <ul class="object-tools">
+            <h1>
+                <a href="/customers/add" class="addlink">添加客户信息</a>
+            </h1>
+        </ul>
+    </div>
+    <div style="margin-top: -10px">
+        <iframe src="{% url 'customers_list' %}"
+                frameborder="0"
+                width="100%"
+                scrolling="no"
+                onload="iframeHeightAutoFit(this)">
+        </iframe>
+    </div>
+    <!-- END Content -->
+{% endblock content %}

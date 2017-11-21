@@ -1,0 +1,166 @@
+{% extends "customers/base.html" %}
+
+{% block content %}
+    <link rel="stylesheet" type="text/css" href="/static/css/addtemplate.css"/>
+
+    {% if title %}
+        <h1>{{ title }}</h1>
+    {% endif %}
+
+    {% if message %}
+        {% if title %}
+            <h1>{{ title }}</h1>
+        {% endif %}
+        <h2>{{ message }}</h2>
+    {% else %}
+        {% if form %}
+            <form action="" method="POST">
+                {% csrf_token %}
+                <table>
+                    <tbody>
+                    {% for field in form %}
+                        {% ifequal field.label '备注' %}
+                            {% if cost_list %}
+                                <tr>
+                                    <td>费用信息:</td>
+                                    <td>
+                                        <div style="padding-left: 10px">
+                                            <div>
+                                                <select name="" id="cost_select" style="padding: 0px; margin: 0px">
+                                                    {% for cost_info in cost_list %}
+                                                        <option value="{{ cost_info.id }}">
+                                                            {{ cost_info.cost_name_text }}-{{ cost_info.cost_price_float }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <span>费用名称:</span>
+                                                <input id="cost_name" type="text" name="cost_name"
+                                                       value={{ cost_list.0.cost_name_text }}>
+                                                <span style="padding-left: 10px">费用价格:</span>
+                                                <input id="cost_value" type="number" name="cost_name"
+                                                       value={{ cost_list.0.cost_price_float }}>
+                                                <button id="add_cost" type="button" style="padding-left: 10px; margin: 10px">添加</button>
+                                            </div>
+                                        </div>
+
+                                        {% if extra_cost_list %}
+                                            <table>
+                                                <tbody>
+                                                {% for cost_info in extra_cost_list %}
+                                                    <tr>
+                                                        <td>
+                                                            <span>{{ cost_info.cost_key.cost_name_text }}:{{ cost_info.cost_key.cost_price_float }}元</span>
+                                                            {% ifequal extra_info 'trans_id' %}
+                                                                <a href="{% url 'del_trans_cost' cost_info.id %}">
+                                                                    <img src="/static/img/inline-delete.svg">
+                                                                </a>
+                                                            {% endifequal %}
+                                                            {% ifequal extra_info 'transgoods_id' %}
+                                                                <a href="{% url 'del_transgoods_cost' cost_info.id %}">
+                                                                    <img src="/static/img/inline-delete.svg">
+                                                                </a>
+                                                            {% endifequal %}
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        {% endif %}
+                                        <br/>
+                                    </td>
+
+                                    <td></td>
+                                </tr>
+                            {% endif %}
+                        {% endifequal %}
+                        <tr>
+                            <td>{{ field.label_tag }}</td>
+                            <td>
+                                {{ field }}
+                                {{ field.errors }}
+                            </td>
+                            <td></td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                <br/>
+                <br/>
+                <input type="submit" value="保存"/>
+            </form>
+        {% endif %}
+    {% endif %}
+
+    {% if error_message %}
+        {% if redirect %}
+            <p>
+                <span>{{ error_message }}</span>
+                <span style="color: #aa1111">5秒后跳转(</span>
+                <span id="totalSecond" style="color: #aa1111">5</span>
+                <span style="color: #aa1111">)</span>
+            </p>
+        {% else %}
+            <h1>{{ error_message }}</h1>
+        {% endif %}
+    {% endif %}
+
+    <script language="javascript" type="text/javascript">
+        // cost selection handling
+        var sel = document.getElementById("cost_select");
+        if (sel) {
+            sel.onchange = function () {
+                var sel_text = sel.options[sel.selectedIndex].text;
+
+                var sepIndex = sel_text.lastIndexOf('-');
+                var name = sel_text.substring(0, sepIndex);
+                var value = parseFloat(sel_text.substring(sepIndex + 1));
+                document.getElementById('cost_name').value = name;
+                document.getElementById('cost_value').value = value;
+            }
+        }
+
+        // handle cost add
+        var extra_info = '{{ extra_info }}';
+        var extra_id = {{ extra_id }};
+        var add_cost_btn = document.getElementById("add_cost");
+        if (add_cost_btn && sel) {
+            add_cost_btn.onclick = function () {
+                var cost_id = 'cost_id=' + sel.options[sel.selectedIndex].value;
+                var cost_name = 'cost_name=' + document.getElementById('cost_name').value;
+                var cost_value = 'cost_value=' + document.getElementById('cost_value').value;
+
+                window.location.href = '/trans/costs/adddirect?'
+                    + extra_info + "=" + extra_id + '&' + cost_id + '&' + cost_name + '&' + cost_value;
+
+                document.execCommand('Refresh')
+            }
+        }
+
+        // handling for redirect after 5s
+        var second = document.getElementById('totalSecond').textContent;
+
+        if (second !== null || second !== undefined || second !== '') {
+            if (navigator.appName.indexOf("Explorer") > -1) {
+                second = document.getElementById('totalSecond').innerText;
+            } else {
+                second = document.getElementById('totalSecond').textContent;
+            }
+
+            setInterval("redirect('{{ redirect }}')", 1000);
+        }
+
+        function redirect(redirect_url) {
+            if (second < 0) {
+                location.href = redirect_url;
+            } else {
+                if (navigator.appName.indexOf("Explorer") > -1) {
+                    document.getElementById('totalSecond').innerText = second--;
+                } else {
+                    document.getElementById('totalSecond').textContent = second--;
+                }
+            }
+        }
+    </script>
+
+{% endblock content %}

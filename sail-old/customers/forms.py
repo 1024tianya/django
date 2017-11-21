@@ -94,6 +94,10 @@ class PictureInfo(forms.Form):
     trans_goods_picture_path_text = forms.CharField(max_length=100, required=True, label="图片路径名")
 
 
+class GoodsPictureForm(forms.Form):
+    picture = forms.ImageField()
+
+
 # goods forms
 class GoodsInfoForm(forms.Form):
     goods_provider = forms.ChoiceField(label="供应商", required=True)

@@ -1,0 +1,45 @@
+{% extends "common/base.html" %}
+
+{% block content_header %}
+    <h1 style="font-size: x-large">供应商列表</h1>
+{% endblock content_header %}
+
+{% block content %}
+
+    <!-- Content -->
+    <div style="">
+        <ul class="object-tools">
+            <h1>
+                <a href="/providers/add" class="addlink">添加供应商</a>
+            </h1>
+        </ul>
+
+        {% if providers_info_list %}
+            <div>
+            <table cellpadding="3">
+                <tr>
+                    <th width="25%" style="font-size: larger">供应商名称</th>
+                    <th style="font-size: larger">地址</th>
+                    <th style="font-size: larger">添加日期</th>
+                    <th style="font-size: larger">备注</th>
+                    <th style="font-size: larger">操作</th>
+                </tr>
+                {% for provider_info in providers_info_list %}
+                    <tr class="table_row" style="font-size: medium">
+                        <td>{{ provider_info.name }}</td>
+                        <td>{{ provider_info.address }}</td>
+                        <td>{{ provider_info.add_date }}</td>
+                        <td>{{ provider_info.comment }}</td>
+                        <td><a href="/providers/edit/{{ provider_info.id }}/">修改 | </a>
+                            <a href="javascript:if(confirm('确实要删除吗?'))location='/providers/del/{{ provider_info.id }}/'">删除</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+        {% else %}
+            <p>没有供应商信息。</p>
+        {% endif %}
+        </div>
+    </div>
+    <!-- END Content -->
+{% endblock content %}

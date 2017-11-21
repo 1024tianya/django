@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" type="text/css" href="/static/css/base.css"/>
+</head>
+
+<body class="dashboard"
+      data-admin-utc-offset="28800" style="background-color:#f4f4ff">
+
+<!-- Container -->
+<div id="container" style="width: 100%">
+    <div class="row">
+        <div class="col-md-12">
+            <!-- trans info header -->
+            <div style="padding: 5px; background-color: #ffded3">
+                <span style="font-size: medium">交易信息 </span>
+                <span> - </span><u><a href="{% url 'add_trans' customer_id %}" target="_parent">添加交易信息</a></u> <b> </b>
+            </div>
+
+            <!-- trans info content area-->
+            <div>
+                <table class="trans_info_table" style="width: 100%;">
+                    <tbody>
+                    <tr>
+                        <th style="padding-top: 2px; padding-bottom: 2px; padding-right: 5px; margin: 0px; width: 30%; font-size: smaller; color: GrayText; background-color: #e5e5e5">
+                            货品
+                        </th>
+                        <th style="padding-top: 2px; padding-bottom: 2px; padding-left: 10px; padding-right: 5px; margin: 0px; width: 10%; font-size: smaller; color: GrayText; background-color: #e5e5e5">
+                            价格
+                        </th>
+                        <th style="padding-top: 2px; padding-bottom: 2px; padding-left: 10px; padding-right: 5px; margin: 0px; width: 10%; font-size: smaller; color: GrayText; background-color: #e5e5e5">
+                            数量
+                        </th>
+                        <th style="padding-top: 2px; padding-bottom: 2px; padding-left: 10px; padding-right: 5px; margin: 0px; width: 10%; font-size: smaller; color: GrayText; background-color: #e5e5e5">
+                            货款
+                        </th>
+                        <th style="padding-top: 2px; padding-bottom: 2px; padding-left: 10px; padding-right: 5px; margin: 0px; width: 20%; font-size: smaller; color: GrayText; background-color: #e5e5e5">
+                            备注
+                        </th>
+                    </tr>
+                    </tbody>
+                </table>
+                {% if trans_info_list %}
+                    {% for trans_details_info in trans_info_list %}
+                        <div id="trans_details_info" style="width:100%; padding-left: 3px; padding-right: 3px">
+                            <!-- trans title info -->
+                            <div style="padding:3px; background-color: #d2e4fd;">
+                                {% if trans_details_info.trans.trans_order_number_text|cut:' '|length != 0 %}
+                                    <span style="padding-left: 5px">交易单号:</span>
+                                    <span style="min-width:20px;font-size: small; color: GrayText">{{ trans_details_info.trans.trans_order_number_text }}</span>
+                                {% endif %}
+                                {% if trans_details_info.trans.trans_name_text|cut:' '|length != 0 %}
+                                    <span style="padding-left: 5px"> 名称:</span>
+                                    <span style="min-width:20px;font-size: small; color: GrayText">{{ trans_details_info.trans.trans_name_text }}</span>
+                                {% endif %}
+                                {% if trans_details_info.trans.contract_name_text|cut:' '|length != 0 %}
+                                    <span style="padding-left: 5px"> 合同编号:</span>
+                                    <span style="min-width:20px;font-size: small; color: GrayText">{{ trans_details_info.trans.contract_name_text }}</span>
+                                {% endif %}
+                                {% if trans_details_info.contact_name|cut:' '|length != 0 %}
+                                    <span style="padding-left: 5px"> 经办人:</span>
+                                    <span style="min-width:20px;font-size: small; color: GrayText">{{ trans_details_info.contact_name }}</span>
+                                {% endif %}
+                                {% if trans_details_info.trans.trans_date %}
+                                    <span style="padding-left: 5px">成交日期:</span>
+                                    <span style="min-width:20px;font-size: small; color: GrayText">{{ trans_details_info.trans.trans_date }}</span>
+                                {% endif %}
+                                {% if trans_details_info.trans.trans_date %}
+                                    <span style="padding-left: 5px">交货日期:</span>
+                                    <span style="min-width:20px; font-size: small; color: GrayText">{{ trans_details_info.trans.trans_date }}</span>
+                                {% endif %}
+                                <b> - </b><u><a href="{% url 'edit_trans' trans_details_info.trans.id %}"  target="_parent">修改</a></u>
+                                <b> - </b><u><a href="{% url 'add_transgoods' trans_details_info.trans.id %}" target="_parent">添加货物信息</a></u>
+
+                                <a href="javascript:if(confirm('确实要删除吗?'))location='{% url 'del_trans' trans_details_info.trans.id %}'" target="_parent">
+                                    <img src="/static/img/inline-delete.svg" style="float: right; padding-top: 3px; padding-right: 3px" />
+                                </a>
+                            </div>
+
+                            <!-- trans goods info -->
+                            <div id="trans_goods_info" style="width: 100%">
+                                <table class="trans_info_table" style="width: 100%">
+                                    <tbody>
+                                        <tr>
+                                            <!-- goods info area，（货品，单价，数量）-->
+                                            <td  style="width: 50%">
+                                                {% if trans_details_info.transgoods_info_list %}
+                                                <table class="trans_info_table" style="width: 100%">
+                                                    <tbody>
+                                                        {% for trans_goods_info in trans_details_info.transgoods_info_list %}
+                                                            <tr>
+                                                                <!-- image info -->
+                                                                <td style="width: 20%" >
+                                                                    <a href="{% url 'edit_transgoods' trans_goods_info.transgoods.id %}" target="_parent">
+                                                                        <img src="/static/pictures/default.jpg">
+                                                                    </a>
+                                                                </td>
+
+                                                                <!-- goods general info -->
+                                                                <td style="width: 40%">
+                                                                    {% if trans_goods_info.goods_name|cut:' '|length != 0 %}
+                                                                        <span href = "{% url 'goods_detail' trans_goods_info.transgoods.goods_key.id %}" target="_parent">
+                                                                            {{ trans_goods_info.goods_name }}({{ trans_goods_info.provider_name }})
+                                                                        </span>
+                                                                    {% endif %}
+                                                                </td>
+
+                                                                <!-- price info -->
+                                                                <td style="width: 20%">
+                                                                    {% if trans_goods_info.transgoods %}
+                                                                        <span>{{ trans_goods_info.transgoods.price_float }} 元</span>
+                                                                        <br />
+                                                                        <span style="font-size: smaller ; color: GrayText">
+                                                                            报价：{{ trans_goods_info.transgoods.price_quoted_float }} 元
+                                                                        </span>
+                                                                    {% endif %}
+                                                                    {% if trans_goods_info.transgoods_cost_info_list %}
+                                                                        {% for cost_info in trans_goods_info.transgoods_cost_info_list %}
+                                                                            <br />
+                                                                            <span style="font-size: smaller; color: GrayText">{{ cost_info.cost_key.cost_name_text }}:{{ cost_info.cost_key.cost_price_float }}元</span>
+                                                                        {% endfor %}
+                                                                    {% endif %}
+                                                                </td>
+
+                                                                <!-- num info -->
+                                                                <td  style="width: 10%">
+                                                                    <span>{{ trans_goods_info.transgoods.num_int }}</span>
+                                                                </td>
+                                                                <td style="width: 10%; text-align:center;">
+                                                                    <div>
+                                                                        <a href="{% url 'edit_transgoods' trans_goods_info.transgoods.id %}" target="_parent"
+                                                                           style="text-align:center; font-size: small;">
+                                                                            编辑 </a>
+                                                                        <a href="javascript:if(confirm('确实要删除吗?'))location='/trans/customers/transgoods/del/{{ trans_goods_info.transgoods.id }}/'" target="_parent"
+                                                                           style="text-align:center; font-size: small;">
+                                                                            删除 </a>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                                {% endif %}
+                                            </td>
+
+                                            <!-- crash area:总货款，交易费用，优惠，税点-->
+                                            <td  style="width: 10%">
+                                                <span>{{ trans_details_info.trans.trans_payment_float }} 元</span>
+                                                <br />
+                                                <span style="font-size: smaller; color: GrayText">优惠：{{ trans_details_info.trans.trans_reduction_float }}元</span>
+                                                <br />
+                                                <span style="font-size: smaller; color: GrayText">税点：{{ trans_details_info.trans.trans_fax_int }}%</span>
+                                                {% if trans_details_info.trans_cost_list %}
+                                                    {% for cost_info in trans_details_info.trans_cost_list %}
+                                                        <br />
+                                                        <span style="font-size: smaller; color: GrayText">{{ cost_info.cost_key.cost_name_text }}:{{ cost_info.cost_key.cost_price_float }}</span>
+                                                    {% endfor %}
+                                                {% endif %}
+                                            </td>
+
+                                            <!-- trans comment -->
+                                            <td  style="width: 20%">
+                                                <span>{{ trans_details_info.trans.comment_text }}</span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                {% if trans_details_info.transgoods_info_list %}
+                                {% endif %}
+                            </div> <!-- trans_goods_info end -->
+                        </div> <!-- trans_details_info end -->
+                    {% endfor %}
+                {% else %}
+                    <p style="padding-left: 10px">没有交易信息。</p>
+                {% endif %}
+            </div> <!-- end of trans content area -->
+            {% if error_message %}
+                error_message:{{ error_message }}
+            {% endif %}
+        </div>
+    </div>
+</div>
+</body>
+</html>
